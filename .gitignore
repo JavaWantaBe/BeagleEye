@@ -58,3 +58,6 @@ docs/_build/
 target/
 
 
+
+BeagleEye.iml
+.idea

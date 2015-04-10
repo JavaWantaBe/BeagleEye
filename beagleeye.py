@@ -57,6 +57,9 @@ while 1:
     # Acquire Image
     ret, frame = cap.read()
 
+    if ret:
+        print("Captured Frame")
+
 	# Check if coming or going
 
 	# If check equals setting, start image recognition
@@ -66,7 +69,7 @@ while 1:
 	# If multiple OCR on multiple frames equal, have valid entry / exit
 
 	# Save to database
-
+    #cv2.waitKey(10)
 	# If exit key entered, exit
     myin = raw_input()
     if myin == 'x':

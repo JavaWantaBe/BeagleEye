@@ -23,3 +23,11 @@ class Database:
             return False
         finally:
             print("Yep")
+
+    def updateRequest(self, query):
+        try:
+            self.db = _mysql.connect( self.host, self.user, self.password, self.database )
+        except _mysql.Error:
+            mysqlLogger.error("Could not connect to database")
+
+    

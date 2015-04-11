@@ -3,7 +3,6 @@ __author__ = 'richard'
 import logging
 from os import path, makedirs
 from xml.etree import ElementTree as Et
-from xml.etree.ElementTree import Element
 
 
 # Setup logger for module logging system.  Usages are settinglog.info( "This is info" )
@@ -47,8 +46,6 @@ def get_network_settings():
                     continue
                 network[temp.tag] = temp.text
             break
-        else:
-            settinglog.debug("setting not found")
     return network
 
 
@@ -67,8 +64,6 @@ def get_camera_settings():
                     continue
                 camera[temp.tag] = temp.text
             break
-        else:
-            settinglog.debug("setting not found")
     return camera
 
 
@@ -87,8 +82,6 @@ def get_ocr_settings():
                     continue
                 ocr[temp.tag] = temp.text
             break
-        else:
-            settinglog.debug("setting not found")
     return ocr
 
 
@@ -107,8 +100,6 @@ def get_server_settings():
                     continue
                 server[temp.tag] = temp.text
             break
-        else:
-            settinglog.debug("setting not found")
     return server
 
 
@@ -124,7 +115,3 @@ def _write_settings():
     print "Write settings here"
 
 
-print get_network_settings()
-print get_camera_settings()
-print get_ocr_settings()
-print get_server_settings()

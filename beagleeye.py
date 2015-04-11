@@ -45,7 +45,7 @@ cap = cv2.VideoCapture(0)
 # *********************** MySQL *************************
 dbParam = {'host': 'localhost', 'user': 'beagle', 'password': '123foo', 'database': 'beagleeye'}
 try:
-    db = database.Database(dbParam)
+    db = database.Database(**dbParam)
 except:
     pass
 finally:
@@ -54,6 +54,11 @@ finally:
 # logger.info("Database connection is:" + db_connected)
 
 # Load settings
+network_settings = settings.get_network_settings()
+camera_settings = settings.get_camera_settings()
+ocr_settings = settings.get_ocr_settings()
+server_settings = settings.get_server_settings()
+
 
 syslog.info("system started")
 

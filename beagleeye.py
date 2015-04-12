@@ -9,6 +9,10 @@ import icu
 import ocr
 import settings
 import sys
+import threading
+import Queue
+
+
 
 # *********************Web Video ************************
 #   The video file mjpg/video.mjpg is simply being accessed
@@ -27,6 +31,7 @@ local_settings = settings.SettingManager()
 # ******************** Video Device *********************
 #   Capture device used
 capture_device = 0
+capture_queue = Queue.Queue(100)
 
 # ********************** Logger **************************
 #   Create logger with proper date and formatting for both
@@ -65,11 +70,6 @@ def setup_capture_device(device):
         cam_settings = local_settings.get_settings('camera')
 
         capture_device = cv2.VideoCapture(int(cam_settings['device']))
-        # Print current device settings
-        syslog.debug('Cap width: {}, height: {}, \
-        fps: {}'.format(str(capture_device.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                        str(capture_device.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-                        str(capture_device.get(cv2.CAP_PROP_FPS))))
 
         # Setup device
         capture_device.set(cv2.CAP_PROP_FRAME_WIDTH, int(cam_settings['width']))
@@ -77,6 +77,13 @@ def setup_capture_device(device):
         capture_device.set(cv2.CAP_PROP_FPS, int(cam_settings['fps']))
     else:
         capture_device = cv2.VideoCapture(device)
+
+    # Print current device settings
+    syslog.debug('width: {}, height: {}, \
+        fps: {}'.format(str(capture_device.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                        str(capture_device.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+                        str(capture_device.get(cv2.CAP_PROP_FPS))))
+
 
 
 ##
@@ -86,14 +93,14 @@ def setup_capture_device(device):
 #
 #   @returns - frame
 def get_frame():
+    while not capture_queue.full():
+        ret, frame = capture_device.read()
 
-    ret, frame = capture_device.read()
-
-    if ret:
-        return frame
-    else:
-        syslog.error("Failed to capture image")
-        return None
+        if ret:
+            capture_queue.put(frame)
+            cv2.waitKey(100)
+        else:
+            syslog.error("Failed to capture image")
 
 
 def print_usage():
@@ -141,19 +148,23 @@ def main():
     detected_movement = False   # Variable for determining when to exit loop
     on_beaglebone = False
 
-    while 1:
+    video_thread = threading.Thread(name='video_capture', target=get_frame)
+    video_thread.start()
 
+    while True:
         # Check if coming or going
         while not detected_movement:
-            # Acquire Image
-            frame = get_frame()
-
-            if frame is None:
-                exit(1)
-
-            if not on_beaglebone:
-                cv2.imshow('Debug Output', frame)
+            try:
+                image = capture_queue.get()
+                print image
+                cv2.imshow('Debugging Window', image)
                 cv2.waitKey(10)
+            except Queue.Empty:
+                syslog.debug("Queue empty")
+            #if not capture_queue.empty():
+            #    if not on_beaglebone:
+            #        cv2.imshow('Debug Output', capture_queue.get())
+            #        cv2.waitKey(10)
             # if direction.detect(frame):
             #    detected_movement = True
 
@@ -167,6 +178,9 @@ def main():
 
         # If exit key entered, exit
         myin = raw_input()
+
+        if not on_beaglebone:
+            cv2.destroyAllWindows()
 
         if myin == 'x':
             break

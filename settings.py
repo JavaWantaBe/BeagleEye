@@ -119,106 +119,50 @@ class SettingManager(object):
         self.root = self.tree.getroot()
 
     ##
-    # @brief Reads network settings from settings file
+    #   @brief Reads settings from settings file
     #
-    # Searches tree of elements populated from a search of tags with setting
-    # then iterates those tags for one with a name of network.  Once found it
-    # populates the dictionary with all the attributes found in network.
+    #   Searches tree of elements populated from a search of tags with setting
+    #   then iterates those tags for one with a name of the passed setting_name.
+    #   Once found it populates the dictionary with all the attributes found in
+    #   network.
     #
-    # @return dictionary of network settings
-    def get_network_settings(self):
+    #   @param setting_name - name of setting
+    #
+    # @return dictionary of settings
+    def get_settings(self, setting_name):
+        setting = {}
 
-        network = {}
-
-        for child in self.root.iter('setting'):
-            if child.attrib['name'] == 'network':
+        for child in self.root.iterfind('setting'):
+            if child.attrib['name'] == setting_name:
                 for temp in child.iter():
                     if temp.tag == 'setting':
                         continue
-                    network[temp.tag] = temp.text
+                    setting[temp.tag] = temp.text
                 break
-        return network
+        return setting
 
     ##
-    #   @brief Sets network settings
+    #   @brief Sets settings into settings file
     #
+    #   @param setting_name - name of setting
     #   @param **kwargs - dictionary of settings
     #
-    def set_network_settings(self, **kwargs):
-        # TODO Impliment setting network settings
+    def set_settings(self, setting_name, **kwargs):
 
         for child in self.root.iter('setting'):
-            if child.attrib['name'] == 'network':
+            if child.attrib['name'] == setting_name:
                 # Have the correct child
                 for temp in child.iter():
                     # For each child in network, iterate through and compare tags
                     for args in kwargs.keys():
                         if args == temp.tag:
-                            temp.txt = kwargs[args]
+                            temp.text = kwargs[args]
 
         self._write_settings()
 
-    def get_camera_settings(self):
-        camera = {}
-
-        for child in self.root.iter('setting'):
-            if child.attrib['name'] == 'camera':
-                for temp in child.iter():
-                    if temp.tag == 'setting':
-                        continue
-                    camera[temp.tag] = temp.text
-                break
-        return camera
-
-    def set_camera_settings(self, **kwargs):
-        # TODO Impliment setting camera settings
-        self._write_settings()
-
-    def get_ocr_settings(self):
-        ocr = {}
-
-        for child in self.root.iter('setting'):
-            if child.attrib['name'] == 'ocr':
-                for temp in child.iter():
-                    if temp.tag == 'setting':
-                        continue
-                    ocr[temp.tag] = temp.text
-                break
-        return ocr
-
-    def set_ocr_settings(self, **kwargs):
-        # TODO Impliment setting ocr settings
-        self._write_settings()
-
-    def get_server_settings(self):
-        server = {}
-
-        for child in self.root.iter('setting'):
-            if child.attrib['name'] == 'camera':
-                for temp in child.iter():
-                    if temp.tag == 'setting':
-                        continue
-                    server[temp.tag] = temp.text
-                break
-        return server
-
-    def set_server_settings(self, **kwargs):
-        # TODO Impliment setting server settings
-        self._write_settings()
-
+    ##
+    #   @brief Writes any changes back to settings file
+    #
     def _write_settings(self):
-        # TODO: Write settings
-
-        self.tree.write(self.xml_file, xml_declaration=True, encoding='utf-8', method="xml")
+        self.tree.write(xml_file, xml_declaration=True, encoding='utf-8', method="xml")
         setting_log.debug("Wrote new settings")
-
-
-
-
-
-
-tempsettings = {'ip': '192.168.1.11', 'sub': '255.255.255.0', 'gw': '192.168.1.1', 'dhcp': 'auto'}
-#set_network_settings(**tempsettings)
-test_ojbect = SettingManager()
-
-print test_ojbect.get_network_settings()

@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
 <beagleeye>
   <setting name="network">
-    <ip>192.168.1.10</ip>
+    <ip>192.168.1.11</ip>
     <sub>255.255.255.0</sub>
-    <gw>192.168.1.0</gw>
-    <dhcp>manual</dhcp>
+    <gw>192.168.1.1</gw>
+    <dhcp>auto</dhcp>
   </setting>
   <setting name="camera">
     <resolution>1280x720</resolution>

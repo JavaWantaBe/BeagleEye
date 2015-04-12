@@ -1,22 +1,22 @@
-<?xml version="1.0"?>
+<?xml version='1.0' encoding='utf-8'?>
 <beagleeye>
-    <setting name="network">
-        <ip>192.168.1.10</ip>
-        <sub>255.255.255.0</sub>
-        <gw>192.168.1.1</gw>
-        <dhcp>manual</dhcp>
-    </setting>
-    <setting name="camera">
-        <resolution>1280x720</resolution>
-        <device>0</device>
-        <fps>10</fps>
-    </setting>
-    <setting name="server">
-        <ip>192.168.1.5</ip>
-        <user>beagleeye</user>
-        <password>foo</password>
-    </setting>
-    <setting name="ocr">
-        <positives>3</positives>
-    </setting>
+  <setting name="network">
+    <ip>192.168.1.10</ip>
+    <sub>255.255.255.0</sub>
+    <gw>192.168.1.0</gw>
+    <dhcp>manual</dhcp>
+  </setting>
+  <setting name="camera">
+    <resolution>1280x720</resolution>
+    <device>0</device>
+    <fps>10</fps>
+  </setting>
+  <setting name="server">
+    <ip>192.168.1.5</ip>
+    <user>beagleeye</user>
+    <password>foo</password>
+  </setting>
+  <setting name="ocr">
+    <positives>3</positives>
+  </setting>
 </beagleeye>

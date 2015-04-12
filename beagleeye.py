@@ -3,25 +3,27 @@ __author__ = 'richard'
 import cv2
 import database
 import logging
-import os
+from os import path
 import direction
 import icu
 import ocr
 import settings
 
+# *********************Settings Mangaer*****************
+local_settings = settings.SettingManager()
 
-# *********************  Globals *************************
-db_connected = False
+# ******************** Video Device *********************
+capture_device = 0
 
 # ********************** Logger **************************
 # Create logger
 logging.basicConfig(level=logging.DEBUG,
                     format=('%(asctime)s %(name)-12s %(levelname)-8s %(message)s'),
                     datefmt='%m-%d %H:%M',
-                    filename=os.curdir + os.sep + 'log' + os.sep + 'system.log',
+                    filename= path.join('log', 'system.log'),
                     filemode='a')
 # Setup file handler
-fh = logging.FileHandler('./log/system.log')
+fh = logging.FileHandler('log/system.log')
 fh.setLevel(logging.DEBUG)
 
 # Setup console handler
@@ -38,48 +40,78 @@ logging.getLogger('').addHandler(ch)
 # Create logger for this module
 syslog = logging.getLogger('main')
 
-# ******************** Video Device *********************
-cap = cv2.VideoCapture(0)
+
+# ******************************************
+#               Functions
+# ******************************************
+def setup_capture_device():
+    global capture_device
+    cam_settings = local_settings.get_settings('camera')
+    print cam_settings
+    capture_device = cv2.VideoCapture(int(cam_settings['device']))
+    capture_device.set(cv2.CAP_PROP_FRAME_WIDTH, int(cam_settings['width']))
+    capture_device.set(cv2.CAP_PROP_FRAME_HEIGHT, int(cam_settings['height']))
+    capture_device.set(cv2.CAP_PROP_FPS, int(cam_settings['fps']))
 
 
-# *********************** MySQL *************************
-dbParam = {'host': 'localhost', 'user': 'beagle', 'password': '123foo', 'database': 'beagleeye'}
-try:
-    db = database.Database(**dbParam)
-except:
-    pass
-finally:
-    syslog.error("Could not connect to database")
-
-# logger.info("Database connection is:" + db_connected)
-
-# Load settings
-network_settings = settings.get_network_settings()
-camera_settings = settings.get_camera_settings()
-ocr_settings = settings.get_ocr_settings()
-server_settings = settings.get_server_settings()
-
-
-syslog.info("system started")
-
-while 1:
-    # Acquire Image
-    ret, frame = cap.read()
+##
+#   @brief Gets image from capture device
+#
+#   Retrieves a single frame from the configured capture device
+#
+#   @returns - frame
+def get_frame():
+    ret, frame = capture_device.read()
 
     if ret:
-        print("Captured Frame")
+        return frame
+    else:
+        syslog.error("Failed to capture image")
 
-	# Check if coming or going
+def main():
+    setup_capture_device()
+    syslog.info("system started")
 
-	# If check equals setting, start image recognition
+    # *********************** MySQL *************************
+    dbParam = local_settings.get_settings('database')
 
-	# Found shape, start OCR
+    try:
+        db = database.Database(**dbParam)
+    except:
+        pass
+    finally:
+        syslog.error("Could not connect to database")
 
-	# If multiple OCR on multiple frames equal, have valid entry / exit
+    detected_movement = False   # Variable for determining when to exit loop
+    on_beaglebone = False
 
-	# Save to database
-    #cv2.waitKey(10)
-	# If exit key entered, exit
-    myin = raw_input()
-    if myin == 'x':
-        break
+    while 1:
+
+        # Check if coming or going
+        while not detected_movement:
+            # Acquire Image
+            frame = get_frame()
+
+            if not on_beaglebone:
+                cv2.imshow('Debug Output', frame)
+                cv2.waitKey(10)
+            # if direction.detect(frame):
+            #    detected_movement = True
+
+        # If check equals setting, start image recognition
+
+        # Found shape, start OCR
+
+        # If multiple OCR on multiple frames equal, have valid entry / exit
+
+        # Save to database
+
+        # If exit key entered, exit
+        myin = raw_input()
+
+        if myin == 'x':
+            break
+
+
+if __name__ == "__main__":
+    main()

@@ -162,14 +162,13 @@ def main():
                     cv2.imshow('Debugging Window', image)
                     direction.show_histogram(image)
                     cv2.waitKey(10)
+
+                if direction.direction_detected(image):
+                    detected_movement = True
             except Queue.Empty:
                 syslog.debug("Queue empty")
-            #if not capture_queue.empty():
-            #    if not on_beaglebone:
-            #        cv2.imshow('Debug Output', capture_queue.get())
-            #        cv2.waitKey(10)
-            # if direction.detect(frame):
-            #    detected_movement = True
+
+        detected_movement = False
 
         # If check equals setting, start image recognition
 

@@ -40,4 +40,4 @@ def find_average(image_set):
 def direction_detected(frame):
     global timed_average
     # TODO: Detect direction of change
-    print "Change is in the air"
+    return False

@@ -8,15 +8,29 @@ import direction
 import icu
 import ocr
 import settings
+import sys
 
-# *********************Settings Mangaer*****************
+# *********************Web Video ************************
+#   The video file mjpg/video.mjpg is simply being accessed
+#   on a http server (this is a live feed)
+http_video_file = "http://myapplecam.com/mjpg/video.mjpg"
+
+# **********************Local Video *********************
+#   OpenCV can also read some saved video files but
+#   it'll take some work installing the codecs
+local_video_file = ""
+
+# *********************Settings Mangaer******************
+#   Settings manager
 local_settings = settings.SettingManager()
 
 # ******************** Video Device *********************
+#   Capture device used
 capture_device = 0
 
 # ********************** Logger **************************
-# Create logger
+#   Create logger with proper date and formatting for both
+#   file system and console
 logging.basicConfig(level=logging.DEBUG,
                     format=('%(asctime)s %(name)-12s %(levelname)-8s %(message)s'),
                     datefmt='%m-%d %H:%M',
@@ -44,14 +58,25 @@ syslog = logging.getLogger('main')
 # ******************************************
 #               Functions
 # ******************************************
-def setup_capture_device():
-    global capture_device
-    cam_settings = local_settings.get_settings('camera')
-    print cam_settings
-    capture_device = cv2.VideoCapture(int(cam_settings['device']))
-    capture_device.set(cv2.CAP_PROP_FRAME_WIDTH, int(cam_settings['width']))
-    capture_device.set(cv2.CAP_PROP_FRAME_HEIGHT, int(cam_settings['height']))
-    capture_device.set(cv2.CAP_PROP_FPS, int(cam_settings['fps']))
+def setup_capture_device(device):
+    global capture_device  # Accesses the global previously defined
+
+    if device == capture_device:
+        cam_settings = local_settings.get_settings('camera')
+
+        capture_device = cv2.VideoCapture(int(cam_settings['device']))
+        # Print current device settings
+        syslog.debug('Cap width: {}, height: {}, \
+        fps: {}'.format(str(capture_device.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                        str(capture_device.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+                        str(capture_device.get(cv2.CAP_PROP_FPS))))
+
+        # Setup device
+        capture_device.set(cv2.CAP_PROP_FRAME_WIDTH, int(cam_settings['width']))
+        capture_device.set(cv2.CAP_PROP_FRAME_HEIGHT, int(cam_settings['height']))
+        capture_device.set(cv2.CAP_PROP_FPS, int(cam_settings['fps']))
+    else:
+        capture_device = cv2.VideoCapture(device)
 
 
 ##
@@ -61,26 +86,57 @@ def setup_capture_device():
 #
 #   @returns - frame
 def get_frame():
+
     ret, frame = capture_device.read()
 
     if ret:
         return frame
     else:
         syslog.error("Failed to capture image")
+        return None
+
+
+def print_usage():
+    print """Usage: python beagleeye.py [h|l|u]
+    h: http video file
+    l: local video file
+    u: usb or integrated camera device"""
+
 
 def main():
-    setup_capture_device()
+
+    argument_length = len(sys.argv)
+
+    if argument_length == 1:
+        # no supplied argument is okay -- use default
+        video_file_type = ""
+    elif argument_length == 2:
+        # if there is a supplied argument, make sure there is only one
+        video_file_type = sys.argv[1]
+    else:
+        # otherwise print an error
+        print_usage()
+        exit(1)
+
+    # Note: in cv2 the VideoCapture function can be used to create feeds from
+    #   both a usb device or a file
+    capture = ""
+    if video_file_type == 'h':
+        capture = http_video_file
+    elif video_file_type == 'l':
+        capture = local_video_file
+    elif video_file_type == 'u':
+        capture = capture_device
+    elif video_file_type == "":
+        # no supplied
+        capture = capture_device
+    else:
+        print_usage()
+        exit(1)
+
+    setup_capture_device(capture)
+
     syslog.info("system started")
-
-    # *********************** MySQL *************************
-    dbParam = local_settings.get_settings('database')
-
-    try:
-        db = database.Database(**dbParam)
-    except:
-        pass
-    finally:
-        syslog.error("Could not connect to database")
 
     detected_movement = False   # Variable for determining when to exit loop
     on_beaglebone = False
@@ -91,6 +147,9 @@ def main():
         while not detected_movement:
             # Acquire Image
             frame = get_frame()
+
+            if frame is None:
+                exit(1)
 
             if not on_beaglebone:
                 cv2.imshow('Debug Output', frame)

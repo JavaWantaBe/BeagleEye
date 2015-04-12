@@ -143,22 +143,25 @@ def main():
 
     setup_capture_device(capture)
 
-    syslog.info("system started")
-
     detected_movement = False   # Variable for determining when to exit loop
     on_beaglebone = False
 
+    # Start a separate thread to collect video frames
     video_thread = threading.Thread(name='video_capture', target=get_frame)
     video_thread.start()
+
+    syslog.info("system started")
 
     while True:
         # Check if coming or going
         while not detected_movement:
             try:
                 image = capture_queue.get()
-                print image
-                cv2.imshow('Debugging Window', image)
-                cv2.waitKey(10)
+
+                if not on_beaglebone:
+                    cv2.imshow('Debugging Window', image)
+                    direction.show_histogram(image)
+                    cv2.waitKey(10)
             except Queue.Empty:
                 syslog.debug("Queue empty")
             #if not capture_queue.empty():

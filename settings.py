@@ -57,8 +57,11 @@ def _build_default_tree():
     cam_setting = Et.SubElement(beagle, 'setting')
     cam_setting.set('name', 'camera')
 
-    res = Et.SubElement(cam_setting, 'resolution')
-    res.text = '1280x720'
+    res = Et.SubElement(cam_setting, 'width')
+    res.text = '1280'
+
+    res2 = Et.SubElement(cam_setting, 'height')
+    res2.text = '720'
 
     device = Et.SubElement(cam_setting, 'device')
     device.text = '0'
@@ -74,10 +77,10 @@ def _build_default_tree():
     sip.text = '192.168.1.5'
 
     user = Et.SubElement(serv_settings, 'user')
-    user.text = 'beagleeye'
+    user.text = 'beagle1'
 
     password = Et.SubElement(serv_settings, 'password')
-    password.text = 'foo'
+    password.text = 'beagle1'
 
     # OCR Settings
     ocr_setting = Et.SubElement(beagle, 'setting')
@@ -85,6 +88,22 @@ def _build_default_tree():
 
     pos = Et.SubElement(ocr_setting, 'positives')
     pos.text = '3'
+
+    # Database Settings
+    db_setting = Et.SubElement(beagle, 'setting')
+    db_setting.set('name', 'database')
+
+    host = Et.SubElement(db_setting, 'host')
+    host.text = '127.0.0.1'
+
+    dbuser = Et.SubElement(db_setting, 'user')
+    dbuser.text = 'dbuser'
+
+    dbpassword = Et.SubElement(db_setting, 'password')
+    dbpassword.text = 'dbuser'
+
+    dbdata = Et.SubElement(db_setting, 'database')
+    dbdata.text = 'beagleeye'
 
     indent(beagle)
 

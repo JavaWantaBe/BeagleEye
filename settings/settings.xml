@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<beagleeye>
+  <setting name="network">
+    <ip>192.168.1.11</ip>
+    <sub>255.255.255.0</sub>
+    <gw>192.168.1.1</gw>
+    <dhcp>auto</dhcp>
+  </setting>
+  <setting name="camera">
+    <width>1280</width>
+    <height>720</height>
+    <device>0</device>
+    <fps>10</fps>
+  </setting>
+  <setting name="server">
+    <ip>192.168.1.5</ip>
+    <user>beagle1</user>
+    <password>beagle1</password>
+  </setting>
+  <setting name="ocr">
+    <positives>3</positives>
+  </setting>
+  <setting name="database">
+    <host>127.0.0.1</host>
+    <user>dbuser</user>
+    <password>dbuser</password>
+    <database>beagleeye</database>
+  </setting>
+</beagleeye>

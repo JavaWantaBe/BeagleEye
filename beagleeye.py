@@ -7,10 +7,10 @@ from os import path
 import direction
 import icu
 import ocr
-import settings
+from settings import SettingManager
 import sys
-import threading
-import Queue
+from threading import Thread
+from Queue import Queue
 
 
 
@@ -26,18 +26,18 @@ local_video_file = ""
 
 # *********************Settings Mangaer******************
 #   Settings manager
-local_settings = settings.SettingManager()
+local_settings = SettingManager()
 
 # ******************** Video Device *********************
 #   Capture device used
 capture_device = 0
-capture_queue = Queue.Queue(100)
+capture_queue = Queue(100)
 
 # ********************** Logger **************************
 #   Create logger with proper date and formatting for both
 #   file system and console
 logging.basicConfig(level=logging.DEBUG,
-                    format=('%(asctime)s %(name)-12s %(levelname)-8s %(message)s'),
+                    format=('%(asctime)s %(name)-6s %(levelname)-4s %(message)s'),
                     datefmt='%m-%d %H:%M',
                     filename= path.join('log', 'system.log'),
                     filemode='a')
@@ -79,10 +79,10 @@ def setup_capture_device(device):
         capture_device = cv2.VideoCapture(device)
 
     # Print current device settings
-    syslog.debug('width: {}, height: {}, \
-        fps: {}'.format(str(capture_device.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                        str(capture_device.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-                        str(capture_device.get(cv2.CAP_PROP_FPS))))
+    syslog.debug('width: {}, height: {},\
+    fps: {}'.format(str(capture_device.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                    str(capture_device.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+                    str(capture_device.get(cv2.CAP_PROP_FPS))))
 
 
 
@@ -147,7 +147,7 @@ def main():
     on_beaglebone = False
 
     # Start a separate thread to collect video frames
-    video_thread = threading.Thread(name='video_capture', target=get_frame)
+    video_thread = Thread(name='video_capture', target=get_frame)
     video_thread.start()
 
     syslog.info("system started")
@@ -177,7 +177,7 @@ def main():
         # If multiple OCR on multiple frames equal, have valid entry / exit
 
         # Save to database
-
+        database.insert_new_data("INSERT INTO checkin VALUES(NOW())")
         # If exit key entered, exit
         myin = raw_input()
 

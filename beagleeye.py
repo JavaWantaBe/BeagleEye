@@ -9,7 +9,7 @@ import icu
 import ocr
 from settings import SettingManager
 import sys
-from threading import Thread
+from threading import Thread, Timer
 from Queue import Queue
 
 
@@ -83,7 +83,6 @@ def setup_capture_device(device):
     fps: {}'.format(str(capture_device.get(cv2.CAP_PROP_FRAME_WIDTH)),
                     str(capture_device.get(cv2.CAP_PROP_FRAME_HEIGHT)),
                     str(capture_device.get(cv2.CAP_PROP_FPS))))
-
 
 
 ##

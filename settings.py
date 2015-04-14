@@ -127,10 +127,11 @@ class SettingManager(object):
 
         if not path.exists(xml_file):
             _build_default_tree()
-            try:
-                self.tree = Et.parse(xml_file)
-            except Et.ParseError:
-                setting_log.error("Failed to open settings file")
+
+        try:
+            self.tree = Et.parse(xml_file)
+        except Et.ParseError:
+            setting_log.error("Failed to open settings file")
 
         self.root = self.tree.getroot()
 

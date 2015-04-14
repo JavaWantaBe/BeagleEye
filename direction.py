@@ -11,17 +11,53 @@ directlog = logging.getLogger('direction')
 timed_average = []
 
 def show_histogram(frame):
-    # Now create a histogram for the frame
-    h = np.zeros((300, 256, 3))
-    b, g, r = cv2.split(frame)
-    bins = np.arange(256).reshape(256, 1)
+    # Create a histogram for the frame
+    h = np.zeros((300, 256, 3))  # Creates an array 300 rows x 256 columns with 3 values in each array
+    b, g, r = cv2.split(frame)   # Splits image into respective b, g, r arrays
+    """ Setup our bins which are how many divisions we are going to separate the number of colors
+      into.  This is the unit of measure on the X axis of a histogram.  The Y axis is used to represent
+      intensity of that color.  To do this we need the X axis to be n bins wide.  So if we where
+      to divide our colors into 24 units we would need an array consisting of 24 single dimension arrays.
+      The following lines create that structure by first creating a single dimension array with how many
+      bins we are going to use.  The next function reshape, is used to transform that array into
+      the same number we used in the creation of the array, into that number of separate arrays."""
+    bins = np.arange(0, 256, 1)  # Creates an array that starts at 0 to 255 and increments by 1
+    np.reshape(bins, 256, 1)     # Creates a new array of 256 1D arrays with 1 number each
+
     color = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
 
+    # The zip function creates a permutation that consists of a combination of both arguments
+
     for item, col in zip([b, g, r], color):
+        """ cv2.calcHist(images, channels, mask, histSize, ranges[, hist[, accumulate]])
+        1.  images : it is the source image of type uint8 or float32. it should be given in square brackets, ie,
+            “[img]”.
+        2.  channels : it is also given in square brackets. It the index of channel for which we calculate histogram.
+            For example, if input is grayscale image, its value is [0]. For color image, you can pass [0],[1] or [2] to
+            calculate histogram of blue,green or red channel respectively.
+        3.  mask : mask image. To find histogram of full image, it is given as “None”. But if you want to find
+            histogram of particular region of image, you have to create a mask image for that and give it as mask.
+        4.  histSize : this represents our BIN count. Need to be given in square brackets. For full scale, we pass
+            [256].
+        5.  ranges : this is our RANGE. Normally, it is [0,256]."""
         hist_item = cv2.calcHist([item], [0], None, [256], [0, 255])
+        """ The function normalizes the histogram bins by scaling them so that the sum of the bins becomes equal to
+            factor.
+        1.  src – input array.
+        2.  dst – output array of the same size as src .
+        3.  alpha – norm value to normalize to or the lower range boundary in case of the range normalization.
+        4.  beta – upper range boundary in case of the range normalization; it is not used for the norm normalization.
+        5.  normType – normalization type (see the details below).
+        6.  dtype – when negative, the output array has the same type as src; otherwise, it has the same number of
+            channels as src and the depth =CV_MAT_DEPTH(dtype).
+        7.  mask – optional operation mask.
+            """
         cv2.normalize(hist_item, hist_item, 0, 255, cv2.NORM_MINMAX)
+
         hist = np.int32(np.around(hist_item))
+
         pts = np.column_stack((bins, hist))
+
         cv2.polylines(h, [pts], False, col)
 
     h = np.flipud(h)
@@ -41,3 +77,13 @@ def direction_detected(frame):
     global timed_average
     # TODO: Detect direction of change
     return False
+
+def test_unit():
+    image = cv2.imread("images/aseal.jpg")
+    cv2.imshow("Test", image)
+    show_histogram(image)
+    cv2.waitKey(10000)
+
+
+if __name__ == "__main__":
+    test_unit()

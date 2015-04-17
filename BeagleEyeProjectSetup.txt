@@ -1,0 +1,27 @@
+## BeagleEye Project Setup for development
+   ```sh
+   sudo apt-get install python-pip libopencv-*
+   sudo pip install virtualenv
+   ```
+   Create a projects folder in the user home directory.  Create a beagleeye folder in the projects directory.
+
+   ```sh
+   virtualenv env
+   ```
+   Now you have a virtual environment to play in.  While in the beagleeye directory, you should now have a directory named - env
+
+
+   ```sh
+   source env/bin/activate
+   ```
+   You are now using the virtual directory.  Install the python dependencies but be aware that scipy takes 60-100 minutes to install when directly on the beaglebone.
+
+   ```sh
+   pip install numpy scipy mysqldb pytesseract Adafruit_BBIO
+   cp /usr/lib/python2.7/dist-packages/cv* 'your directory here'/projects/BeagleEye/BeagleEye/env/lib/python2.7/site-packages/
+   ```
+
+   Give your user video access
+   ```sh
+   sudo usermod -a -G video 'your user name here'
+   ```

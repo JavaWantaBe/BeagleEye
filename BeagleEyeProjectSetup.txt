@@ -1,6 +1,6 @@
 ## BeagleEye Project Setup for development
    ```sh
-   sudo apt-get install python-pip libopencv-*
+   sudo apt-get install python-pip libopencv-* libmysqlclient-dev
    sudo pip install virtualenv
    ```
    Create a projects folder in the user home directory.  Create a beagleeye folder in the projects directory.

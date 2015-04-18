@@ -10,7 +10,7 @@ import ocr
 from settings import SettingManager
 import sys
 from threading import Thread, Timer
-from Queue import Queue
+import Queue
 
 
 
@@ -31,7 +31,7 @@ local_settings = SettingManager()
 # ******************** Video Device *********************
 #   Capture device used
 capture_device = 0
-capture_queue = Queue(100)
+capture_queue = Queue.Queue(100)
 
 # ********************** Logger **************************
 #   Create logger with proper date and formatting for both
@@ -72,17 +72,17 @@ def setup_capture_device(device):
         capture_device = cv2.VideoCapture(int(cam_settings['device']))
 
         # Setup device
-        capture_device.set(cv2.CAP_PROP_FRAME_WIDTH, int(cam_settings['width']))
-        capture_device.set(cv2.CAP_PROP_FRAME_HEIGHT, int(cam_settings['height']))
-        capture_device.set(cv2.CAP_PROP_FPS, int(cam_settings['fps']))
+        capture_device.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, int(cam_settings['width']))
+        capture_device.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, int(cam_settings['height']))
+        capture_device.set(cv2.cv.CV_CAP_PROP_FPS, int(cam_settings['fps']))
     else:
         capture_device = cv2.VideoCapture(device)
 
     # Print current device settings
     syslog.debug('width: {}, height: {},\
-    fps: {}'.format(str(capture_device.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                    str(capture_device.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-                    str(capture_device.get(cv2.CAP_PROP_FPS))))
+    fps: {}'.format(str(capture_device.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)),
+                    str(capture_device.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)),
+                    str(capture_device.get(cv2.cv.CV_CAP_PROP_FPS))))
 
 
 ##
@@ -97,7 +97,7 @@ def get_frame():
 
         if ret:
             capture_queue.put(frame)
-            cv2.waitKey(100)
+            # cv2.waitKey(100)
         else:
             syslog.error("Failed to capture image")
 

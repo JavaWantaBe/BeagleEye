@@ -106,8 +106,7 @@ def main():
     while True:
         # Check if coming or going
         while not detected_movement:
-            time.sleep(1)
-            print "Pass queue to direction"
+            direction.find_average(capture_device.get_queue)
         detected_movement = False
 
         # If check equals setting, start image recognition

@@ -9,6 +9,7 @@ directlog = logging.getLogger('direction')
 
 # Holds average of image set
 timed_average = []
+bin_size = 128
 
 def show_histogram(frame):
     # Now create a histogram for the frame
@@ -31,10 +32,28 @@ def show_histogram(frame):
     cv2.waitKey(10)
 
 
-def find_average(image_set):
+def find_average(image_queue):
     global timed_average
+    count = 0
+    temp = []
+    hist_value = []
     # TODO: Takes set of frames and averages histograms
-    print "Complete me"
+
+    while not image_queue.empty() or count < 10:
+        # Get an image from the queue
+        image = image_queue.get()
+
+        # Calculate histogram for the image
+        hist_value.append(cv2.calcHist(image, [0], None, [bin_size], [0, 255]))
+        count += 1
+
+    # Once the hist_value array is filled with 10 histograms
+    # Add all 10 histograms together
+    for x in xrange(count):
+        temp[:] += hist_value[x]
+
+    # Divide values in temp array to get timed average
+    # timed_average[:] = temp / count
 
 
 def direction_detected(frame):

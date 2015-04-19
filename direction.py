@@ -9,12 +9,15 @@ import numpy as np
 # Initialize video capture and logger
 directlog = logging.getLogger('direction')
 
+# variable that holds bin size
+bin_size = 128
+
 # Holds average of image set
 timed_average = []
 
 def show_histogram(frame):
     # Create a histogram for the frame
-    h = np.zeros((300, 256, 3))  # Creates an array 300 rows x 256 columns with 3 values in each array
+    h = np.zeros((300, bin_size, 3))  # Creates an array 300 rows x 256 columns with 3 values in each array
     b, g, r = cv2.split(frame)   # Splits image into respective b, g, r arrays
     """ Setup our bins which are how many divisions we are going to separate the number of colors
       into.  This is the unit of measure on the X axis of a histogram.  The Y axis is used to represent
@@ -23,8 +26,8 @@ def show_histogram(frame):
       The following lines create that structure by first creating a single dimension array with how many
       bins we are going to use.  The next function reshape, is used to transform that array into
       the same number we used in the creation of the array, into that number of separate arrays."""
-    bins = np.arange(0, 256, 1)  # Creates an array that starts at 0 to 255 and increments by 1
-    np.reshape(bins, 256, 1)     # Creates a new array of 256 1D arrays with 1 number each
+    bins = np.arange(0, bin_size, 1)  # Creates an array that starts at 0 to 255 and increments by 1
+    np.reshape(bins, bin_size, 1)     # Creates a new array of 256 1D arrays with 1 number each
 
     color = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
 
@@ -43,7 +46,7 @@ def show_histogram(frame):
             [256].
         5.  ranges : this is our RANGE. Normally, it is [0,256].
         """
-        hist_item = cv2.calcHist([item], [0], None, [256], [0, 255])
+        hist_item = cv2.calcHist([item], [0], None, [bin_size], [0, 255])
         """
         The function normalizes the histogram bins by scaling them so that the sum of the bins becomes equal to
             factor.
@@ -69,23 +72,59 @@ def show_histogram(frame):
     # Display histogram
     cv2.imshow('Histogram', h)
     cv2.waitKey(10)
+    return b, g, r
 
 
-def find_average(image_set):
+def find_average(image_queue):
     global timed_average
+    count = 0
+    temp = []
+    hist_value = []
     # TODO: Takes set of frames and averages histograms
-    print "Complete me"
+    
+    while not image_queue.empty() or count < 10:
+
+        # Get an image from the queue
+        image = image_queue.get()
+        count += 1
+        # Calculate histogram for the image
+        hist_value[count] = cv2.calcHist(image, [0], None, [bin_size], [0, 255])
+
+    # Once the hist_value array is filled with 10 histograms
+    if count == 10:
+        # Add all 10 histograms together
+        for x in range(10):
+            temp[:] += hist_value[x]
+
+        # Divide values in temp array to get timed average
+        timed_average[:] = temp / 10
+
+
+
+
+
 
 
 def direction_detected(frame):
     global timed_average
     # TODO: Detect direction of change
+    # We need to figure out that difference in values we want to determine
+    # whether or not we are detecting direction of change.
     return False
 
 def test_unit():
     image = cv2.imread("images/aseal.jpg")
     cv2.imshow("Test", image)
-    show_histogram(image)
+    #bgr = show_histogram(image)
+    hist = cv2.calcHist(image, [0], None, [bin_size], [0,255])
+    d_hist = np.empty_like(hist)
+    d_hist[:] = hist * 2
+
+    print("\n-------------------- Histogram Values ---------------------\n")
+    print(hist)
+    print("\n-------------------- Doubled Histogram Values ---------------------\n")
+    print(d_hist)
+
     cv2.waitKey(10000)
 
 

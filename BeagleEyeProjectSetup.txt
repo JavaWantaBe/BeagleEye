@@ -1,8 +1,16 @@
 ## BeagleEye Project Setup for development
+
    ```sh
    sudo apt-get install python-pip libopencv-* libmysqlclient-dev
    sudo pip install virtualenv
    ```
+Some libaries that are used with OpenCV are: ( First set for read / write of images and second for I/O from the device, last third group is for optimization routines in OpenCV
+```sh
+sudo apt-get install libjpeg8-dev libtiff4-dev libjasper-dev libpng12-dev
+sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
+sudo apt-get install libatlas-base-dev gfortran
+```
+
    Create a projects folder in the user home directory.  Create a beagleeye folder in the projects directory.
 
    ```sh
@@ -14,6 +22,7 @@
    ```sh
    source env/bin/activate
    ```
+
    You are now using the virtual directory.  Install the python dependencies but be aware that scipy takes 60-100 minutes to install when directly on the beaglebone.
 
    ```sh

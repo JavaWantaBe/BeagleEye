@@ -42,6 +42,7 @@ def find_average(image_queue):
     while not image_queue.empty() or count < 10:
         # Get an image from the queue
         image = image_queue.get()
+        show_histogram(image)
 
         # Calculate histogram for the image
         hist_value.append(cv2.calcHist(image, [0], None, [bin_size], [0, 255]))
@@ -49,8 +50,11 @@ def find_average(image_queue):
 
     # Once the hist_value array is filled with 10 histograms
     # Add all 10 histograms together
+    # hist_value contains 10 arrays, each of those arrays are an array with bin(n) arrays
+    # TODO: Need to have an array of arrays to make this work
     for x in xrange(count):
         temp[:] += hist_value[x]
+    print "Added"
 
     # Divide values in temp array to get timed average
     # timed_average[:] = temp / count

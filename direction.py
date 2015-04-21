@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 __author__ = 'trey'
 
 
@@ -8,8 +9,6 @@ import numpy as np
 # Initialize video capture and logger
 directlog = logging.getLogger('direction')
 
-# variable that holds bin size
-bin_size = 128
 
 # Holds average of image set
 timed_average = []

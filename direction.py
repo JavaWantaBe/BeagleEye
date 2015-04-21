@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 __author__ = 'trey'
 
 
@@ -14,6 +13,7 @@ bin_size = 128
 
 # Holds average of image set
 timed_average = []
+bin_size = 128
 
 def show_histogram(frame):
     # Create a histogram for the frame
@@ -81,28 +81,26 @@ def find_average(image_queue):
     temp = []
     hist_value = []
     # TODO: Takes set of frames and averages histograms
-    
-    while not image_queue.empty() or count < 10:
 
+    while not image_queue.empty() or count < 10:
         # Get an image from the queue
         image = image_queue.get()
-        count += 1
+        show_histogram(image)
+
         # Calculate histogram for the image
-        hist_value[count] = cv2.calcHist(image, [0], None, [bin_size], [0, 255])
+        hist_value.append(cv2.calcHist(image, [0], None, [bin_size], [0, 255]))
+        count += 1
 
     # Once the hist_value array is filled with 10 histograms
-    if count == 10:
-        # Add all 10 histograms together
-        for x in range(10):
-            temp[:] += hist_value[x]
+    # Add all 10 histograms together
+    # hist_value contains 10 arrays, each of those arrays are an array with bin(n) arrays
+    # TODO: Need to have an array of arrays to make this work
+    for x in xrange(count):
+        temp[:] += hist_value[x]
+    print "Added"
 
-        # Divide values in temp array to get timed average
-        timed_average[:] = temp / 10
-
-
-
-
-
+    # Divide values in temp array to get timed average
+    # timed_average[:] = temp / count
 
 
 def direction_detected(frame):

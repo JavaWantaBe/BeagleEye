@@ -1,0 +1,4 @@
+numpy
+MySQL-python
+Adafruit_BBIO
+

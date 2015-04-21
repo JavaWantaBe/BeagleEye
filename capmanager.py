@@ -11,7 +11,7 @@ import logging
 
 cap_log = logging.getLogger('capture')
 
-from threading import Thread
+from threading import Thread, Condition
 import time
 import Queue
 
@@ -26,7 +26,7 @@ __all__ = ['CaptureManager']
 
 class CaptureManager(Thread):
     """ CaptureManager used for continuous flow of I/O from device """
-    def __init__(self, device, queue_size=100, fps=10):
+    def __init__(self, device, queue_size=10, fps=10):
         Thread.__init__(self)  # Initialize parent
         # Private Variables
         self._device = cv2.VideoCapture(device)
@@ -35,11 +35,18 @@ class CaptureManager(Thread):
         self._height = self._device.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
         self._fps = 0
         self._desired_fps = fps
+        self._state = Condition()
+        self._paused = True
 
         cap_log.debug("Capture Manager instance created")
 
     def run(self):
+        self.resume()  # unpause self
         while True:
+            with self._state:
+                if self._paused:
+                    self._state.wait()  # block until notified
+
             s_time = time.time()
             successful_capture, image = self._device.read()
 
@@ -53,14 +60,26 @@ class CaptureManager(Thread):
             else:
                 cap_log.error("Could not capture from device")
 
+    def pause(self):
+        with self._state:
+            self._paused = True  # make self block and wait
+
+    def resume(self):
+        with self._state:
+            self._paused = False
+            self._state.notify()  # unblock self if waiting
+
     def get_size(self):
         return self._queue.qsize()
 
     def get_image(self):
+        img = 0
         try:
-            return self._queue.get()
+            img = self._queue.get()
         except Queue.Empty:
             cap_log.exception("Could not retrieve image")
+        finally:
+            return img
 
     @property
     def get_fps(self):

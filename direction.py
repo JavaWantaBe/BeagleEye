@@ -5,6 +5,8 @@ __author__ = 'trey'
 import logging
 import cv2
 import numpy as np
+import time
+from sys import exit
 
 # Initialize video capture and logger
 directlog = logging.getLogger('direction')
@@ -124,6 +126,90 @@ def test_unit():
 
     cv2.waitKey(10000)
 
+# CURRENT EFFORT OF DIRECTION FINDING W/ GROWING OR SHRINKING OF LARGEST RECTANGLE 
+# CONTOUR W/IN THE PASSED-DOWN QUEUE
+#
+# TO DO:
+#   1. TRY BACKGROUND REMOVAL
+#
+def w_find_direction(image_queue):
+    count = 0
+    trend = 0
+    widthBuffer = 0
+
+    while (not image_queue.empty()) and (count < 10):
+    
+        # START CLOCK FOR PERFORMANCE MEASUREMENT
+        startTime = time.time()
+
+        # Get an image from the queue
+        currentFrame = image_queue.get()
+
+        # convert the image to grayscale, blur it, and detect edges with CANNY
+        gray = cv2.cvtColor(currentFrame, cv2.COLOR_BGR2GRAY)
+        thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,35,2)
+        gray = cv2.GaussianBlur(thresh, (15, 15), 0)
+        
+        edged = cv2.Canny(gray, 100, 200)
+
+        # DETECT LARGEST COUNTOUR
+        (cnts, _) = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        c = max(cnts, key = cv2.contourArea)
+ 
+        # compute the bounding box of the of the paper region and return it
+        marker = cv2.minAreaRect(c)
+        
+        # draw a bounding box around the image and display it
+        box = np.int0(cv2.cv.BoxPoints(marker))
+        [tl, bl, br, tr] = box
+
+        width = tr[0] - tl[0]
+        height = tl[1] - bl[1]
+        sizeMessage = "width: ", width, "height: ", height
+        #print sizeMmessage
+
+        cv2.drawContours(currentFrame, [box], -1, (0, 255, 0), 2)
+        cv2.putText(currentFrame, str(sizeMessage), (currentFrame.shape[1] - 200, currentFrame.shape[0] - 20), 
+            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 3)
+        
+        # START COUNTING GROWING TARGET RECTANGLE WIDTH.
+        # TREND WILL GROW IF THE WIDTHS ARE PREDOMINANTLY INCREASING.
+        if count==0:
+            widthBuffer = width
+        else:
+            if width > widthBuffer:
+                trend += 1
+                widthBuffer = width
+                #print trend, "approaching"
+            elif width < widthBuffer:
+                trend -= 1
+                widthBuffer = width
+                #print trend, "departing"
+
+        cv2.imshow("image", currentFrame)
+        cv2.imshow("cv", edged)
+#        cv2.waitKey(0)
+        
+        #print time.time() - startTime
+
+        count += 1
+
+    if trend > 0:
+        dirTravel = 1
+        dirMessage = trend, "APPROACHING"
+        print dirMessage
+    elif trend < 0:
+        dirTravel = -1
+        dirMessage = trend, "LEAVING"
+        print dirMessage
+
+#    if not image_queue.empty():
+#        print dirMessage
+#        cv2.putText(currentFrame, str(dirMessage), (currentFrame.shape[1] - 300, 
+#            currentFrame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+
+    if  cv2.waitKey(0) & 0xFF == ord('q'):
+        exit()
 
 if __name__ == "__main__":
     test_unit()

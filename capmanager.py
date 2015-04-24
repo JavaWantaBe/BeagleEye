@@ -51,12 +51,20 @@ class CaptureManager(Thread):
             successful_capture, image = self._device.read()
 
             if successful_capture:
+
                 try:
                     self._queue.put(image)
                 except Queue.Full:
-                    pass
+                    tmp = self._queue.get()
+
+                    try:
+                        self._queue.put(image)
+                    except Queue.Full:
+                        pass
+
                 cv2.waitKey(1000 / self._desired_fps)
                 self._fps = 1 / (time.time() - s_time)
+
             else:
                 cap_log.error("Could not capture from device")
 
@@ -113,12 +121,15 @@ def test_cap():
 
     cap = CaptureManager(0, 10, 10)
     cap.start()
+    counter = 0
     print "Going into while loop"
 
     while True:
-        print "Happy: " + str(cap.get_fps)
+        if counter % 13 == 0:
+            print "Happy: " + str(cap.get_fps)
         cv2.imshow("Debugger", cap.get_image())
         cv2.waitKey(10)
+        counter += 1
 
 
 if __name__ == "__main__":

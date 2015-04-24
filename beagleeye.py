@@ -103,14 +103,18 @@ def main():
     syslog.info("system started")
     capture_device.start()
 
-    time.sleep(1)
+    time.sleep(2)
 
     while True:
         # Check if coming or going
         while not detected_movement:
 #            direction.find_average(capture_device.get_queue)
             time.sleep(2)
-            direction.w_find_direction(capture_device.get_queue, capture_device.get_size)
+            if capture_device.get_size() >= 10:
+                print "going to detection"
+                direction.w_find_direction(capture_device.get_queue, capture_device.get_size())
+            else:
+                print "frames: ", capture_device.get_size()
         detected_movement = False
 
         # If check equals setting, start image recognition

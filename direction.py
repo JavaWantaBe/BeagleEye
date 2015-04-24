@@ -8,6 +8,8 @@ import numpy as np
 import time
 from sys import exit
 
+#from matplotlib import pyplot as plt
+
 # Initialize video capture and logger
 directlog = logging.getLogger('direction')
 
@@ -129,11 +131,8 @@ def test_unit():
 
 
 
-# CURRENT EFFORT OF DIRECTION FINDING W/ GROWING OR SHRINKING OF LARGEST RECTANGLE 
-# CONTOUR W/IN THE PASSED-DOWN QUEUE
+#      TRYING TO LOOP 10 TIMES FOR DIRECTION DETECTION
 #
-# TO DO:
-#   1. TRY BACKGROUND REMOVAL
 #
 def diffImg(t0, t1, t2):
     d1 = cv2.absdiff(t2, t1)
@@ -141,14 +140,49 @@ def diffImg(t0, t1, t2):
     
     return cv2.bitwise_and(d1, d2)
 
+def w_show_histogram(frame):
+
+    
+    hist_item = cv2.calcHist([frame], [0], None, [bin_size], [0, 255])
+    
+    cv2.normalize(hist_item, hist_item, 0, 255, cv2.NORM_MINMAX)
+
+ #   plt.hist(hist_item.ravel(),256,[0,256])
+ #   plt.title('Histogram for gray scale picture')
+ #   plt.show()
+
+    cv2.waitKey(10)
+    return hist_item
+
 def w_find_direction(image_queue, size):
     count = 0
     trend = 0
     widthBuffer = 0
 
     #time.sleep(3)
- 
     print size
+
+    # PRIME THE COMPARISON FRAME
+    prevFrame = image_queue.get()
+    prevHistogram = w_show_histogram(prevFrame)
+
+    for count in range(10):
+        currentFrame = image_queue.get()
+        currentHistogram = w_show_histogram(currentFrame)
+
+        diffHistogram = cv2.subtract(currentHistogram, prevHistogram)
+        diffMean, diffSTDV = cv2.meanStdDev(diffHistogram)
+
+        prevFrame = currentFrame
+        prevHistogram = currentHistogram
+
+        print "Frame DIFF: ", diffMean, " : ", diffSTDV
+
+'''
+    firstFrame = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
+    secondFrame = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
+    thirdFrame = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
+
 
     if (size >= 3):
         for count in range(0, 1):
@@ -203,6 +237,6 @@ def w_find_direction(image_queue, size):
         cv2.destroyWindow(winName)
         exit()
 
-
+'''
 if __name__ == "__main__":
     test_unit()

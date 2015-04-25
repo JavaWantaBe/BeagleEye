@@ -17,6 +17,8 @@ directlog = logging.getLogger('direction')
 # Holds average of image set
 timed_average = []
 bin_size = 128
+deltaMeanThreshold = 0.2
+
 
 def show_histogram(frame):
     # Create a histogram for the frame
@@ -140,12 +142,35 @@ def diffImg(t0, t1, t2):
     
     return cv2.bitwise_and(d1, d2)
 
-def w_show_histogram(frame):
+def w_show_histogram(frame, doShow):
 
     
-    hist_item = cv2.calcHist([frame], [0], None, [bin_size], [0, 255])
+    hist_height = 64
+    hist_width = 256
+    bin_width = hist_width/bin_size
+
+    #Create an empty image for the histogram
+    h = np.zeros((hist_height,hist_width))
     
+    # CREATE EMPTY ARRAY FOR BINS
+    bins = np.arange(bin_size, dtype=np.int32).reshape(bin_size, 1)
+
+    # BUILDS A HISTOGRAM AND NORMALIZE
+    hist_item = cv2.calcHist([frame], [0], None, [bin_size], [0, 255])
     cv2.normalize(hist_item, hist_item, 0, 255, cv2.NORM_MINMAX)
+    hist=np.int32(np.around(hist_item))
+    pts = np.column_stack((bins,hist))
+
+    #Loop through each bin and plot the rectangle in white
+    for x,y in enumerate(hist):
+        cv2.rectangle(h,(x*bin_width,y),(x*bin_width + bin_width-1,hist_height),(255),-1)
+
+    #Flip upside down
+    h=np.flipud(h)
+
+    #Show the histogram
+    if doShow:
+        cv2.imshow('colorhist',h)
 
  #   plt.hist(hist_item.ravel(),256,[0,256])
  #   plt.title('Histogram for gray scale picture')
@@ -158,80 +183,76 @@ def w_find_direction(image_queue, size):
     count = 0
     trend = 0
     widthBuffer = 0
+    runningMean = 0
+    runningMeanSum = 0
 
     #time.sleep(3)
     print size
 
-    # PRIME THE COMPARISON FRAME
-    prevFrame = image_queue.get()
-    prevHistogram = w_show_histogram(prevFrame)
+    # GET FIRST THREE FRAMES FOR MOTION DETECTION
+    #prevFrame = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
+    currentFrame = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
+    nextFrame = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
 
-    for count in range(10):
-        currentFrame = image_queue.get()
-        currentHistogram = w_show_histogram(currentFrame)
+    #prevFrame = cv2.GaussianBlur(prevFrame,(3,3),0) 
+    #currentFrame = cv2.GaussianBlur(currentFrame,(3,3),0) 
+    #nextFrame = cv2.GaussianBlur(nextFrame,(3,3),0) 
 
-        diffHistogram = cv2.subtract(currentHistogram, prevHistogram)
-        diffMean, diffSTDV = cv2.meanStdDev(diffHistogram)
+    #prevHistogram = w_show_histogram(prevFrame, False)
+    #currentHistogram = w_show_histogram(currentFrame, False)
+    #nextHistogram = w_show_histogram(nextFrame, False)
+    
+    for count in range(9):
 
-        prevFrame = currentFrame
-        prevHistogram = currentHistogram
+        # CHECK FOR DIFFERENCE
+        #delta = diffImg(prevHistogram, currentHistogram, nextHistogram)
+        #delta = diffImg(prevFrame, currentFrame, nextFrame)
 
-        print "Frame DIFF: ", diffMean, " : ", diffSTDV
+        delta = cv2.absdiff(currentFrame, nextFrame)
+        w_show_histogram(delta, True)
+        # THRESHOLD AND DETECT MOVEMENT
+        #ret, th1 = cv2.threshold(delta, 0, 255, cv2.THRESH_BINARY_INV)
 
+        deltaMean, deltaStdDev = cv2.meanStdDev(delta)
+
+        # CALCULATE A RUNNING MEAN
+        if count != 0:
+            runningMeanSum += deltaMean
+            runningMean = runningMeanSum / count
+
+            print deltaMean, " : runMean: ", runningMean
+                
+            # IF THE CURRENT DELTA JUMPS OVER 20% OF THE CURRENT RUNNING AVERAGE
+            # DETECT AS MOVEMENT.
+            if (deltaMean / runningMean) >= (1 + deltaMeanThreshold):
+                print "RISING MOVEMENT!"
+            elif (deltaMean / runningMean) <= (1 - deltaMeanThreshold):
+                print "FALLING MOVEMENT"
+
+        # SET UP FOR NEXT CYCLE
+        #prevFrame = currentFrame
+        currentFrame = nextFrame
+        nextFrame = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
+
+        #prevFrame = cv2.GaussianBlur(prevFrame,(3,3),0) 
+        #currentFrame = cv2.GaussianBlur(currentFrame,(3,3),0) 
+        #nextFrame = cv2.GaussianBlur(nextFrame,(3,3),0) 
+        
+        #prevHistogram = w_show_histogram(prevFrame, False)
+        #currentHistogram = w_show_histogram(currentFrame, False)
+        #nextHistogram = w_show_histogram(nextFrame, False)
+
+
+        #cv2.imshow('delta', delta)
+
+
+    k = cv2.waitKey(30) & 0xff
+    #if k == 27:
+    #    exit()
 '''
     firstFrame = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
     secondFrame = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
     thirdFrame = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
-
-
-    if (size >= 3):
-        for count in range(0, 1):
-            print "count ", count
-
-            if count == 0:
-                # INITIALIZE LOOP W/ FIRST FRAME
-                currentFrame = image_queue.get()
-                t_minus = cv2.cvtColor(currentFrame, cv2.COLOR_RGB2GRAY)
-                t = cv2.cvtColor(currentFrame, cv2.COLOR_RGB2GRAY)
-                t_plus = cv2.cvtColor(currentFrame, cv2.COLOR_RGB2GRAY)
-                break
-            else:
-                change = diffImg(t_minus, t, t_plus)
-                ret, th1 = cv2.threshold(change, 30, 255, cv2.THRESH_BINARY)
-                
-                # DETECT LARGEST CONTOUR
-                (cnts, _) = cv2.findContours(th1, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
- 
-                if (cnts):
-                    c = max(cnts, key = cv2.contourArea)
- 
-                    # compute the bounding box of the of the paper region and return it
-                    marker = cv2.minAreaRect(c)
-        
-                    # draw a bounding box around the image and display it
-                    box = np.int0(cv2.cv.BoxPoints(marker))
-                    [tl, bl, br, tr] = box
-
-                    width = tr[0] - tl[0]
-                    height = tl[1] - bl[1]
-                    sizeMessage = "width: ", width, "height: ", height
-                    #print sizeMmessage
-
-                    cv2.drawContours(th1, [box], -1, (255, 255, 255), 2)
-                    cv2.putText(th1, str(sizeMessage), (th1.shape[1] - 200, th1.shape[0] - 20), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 3)
-
-                cv2.imshow( "Window", th1)
-
-                # READ THE NEXT FRAME
-                t_minus = t
-                t = t_plus
-                nextFrame = image_queue.get()
-                t_plus = cv2.cvtColor(nextFrame, cv2.COLOR_RGB2GRAY)
-
-    else:
-        print "skip"
-
     key = cv2.waitKey(10)
     if key == 27:
         cv2.destroyWindow(winName)

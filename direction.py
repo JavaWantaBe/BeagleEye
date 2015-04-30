@@ -220,7 +220,7 @@ def w_find_direction(image_queue, size):
             runningMeanSum += deltaMean
             runningMean = runningMeanSum / count
 
-            print deltaMean, " : runMean: ", runningMean
+            print "                   ", deltaMean, " : runMean: ", runningMean
                 
             # IF THE CURRENT DELTA JUMPS OVER 20% OF THE CURRENT RUNNING AVERAGE
             # DETECT AS MOVEMENT.

@@ -5,6 +5,7 @@ __author__ = 'trey'
 import logging
 import cv2
 import numpy as np
+from Queue import Queue
 
 # Initialize video capture and logger
 directlog = logging.getLogger('direction')
@@ -13,6 +14,13 @@ directlog = logging.getLogger('direction')
 # Holds average of image set
 timed_average = []
 bin_size = 128
+
+def diffImg(t0,t1,t2):
+    # Run differentials
+    d1 = cv2.absdiff(t0,t1)
+    d2 = cv2.absdiff(t1,t2)
+
+    return cv2.bitwise_and(d1,d2)
 
 def show_histogram(frame):
     # Create a histogram for the frame
@@ -26,7 +34,7 @@ def show_histogram(frame):
       bins we are going to use.  The next function reshape, is used to transform that array into
       the same number we used in the creation of the array, into that number of separate arrays."""
     bins = np.arange(0, bin_size, 1)  # Creates an array that starts at 0 to 255 and increments by 1
-    np.reshape(bins, bin_size, 1)     # Creates a new array of 256 1D arrays with 1 number each
+    np.reshape(bins, bin_size, 1)     # Creates a new array of bin_size 1D arrays with 1 number each
 
     color = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
 
@@ -73,57 +81,51 @@ def show_histogram(frame):
     cv2.waitKey(10)
     return b, g, r
 
-
-def find_average(image_queue):
-    global timed_average
-    count = 0
-    temp = []
-    hist_value = []
-    # TODO: Takes set of frames and averages histograms
-
-    while not image_queue.empty() or count < 10:
-        # Get an image from the queue
-        image = image_queue.get()
-        show_histogram(image)
-
-        # Calculate histogram for the image
-        hist_value.append(cv2.calcHist(image, [0], None, [bin_size], [0, 255]))
-        count += 1
-
-    # Once the hist_value array is filled with 10 histograms
-    # Add all 10 histograms together
-    # hist_value contains 10 arrays, each of those arrays are an array with bin(n) arrays
-    # TODO: Need to have an array of arrays to make this work
-    for x in xrange(count):
-        temp[:] += hist_value[x]
-    print "Added"
-
-    # Divide values in temp array to get timed average
-    # timed_average[:] = temp / count
-
-
-def direction_detected(frame):
-    global timed_average
+def direction_detected(image_queue):
+    global counter, max_count
+    counter = 0
+    max_count = 0
     # TODO: Detect direction of change
-    # We need to figure out that difference in values we want to determine
-    # whether or not we are detecting direction of change.
-    return False
+    t_minus = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
+    t = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
+    t_plus = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
+
+    while True:
+        diff = diffImg(t_minus, t, t_plus)
+        cv2.normalize(diff, diff, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+        count = (diff > 200).sum()
+        if count > max_count:
+            counter += 1
+            if counter == 5:
+                counter = 0
+                directlog.debug("Motion Detected")
+                return True
+            max_count = count
+        else:
+            max_count = 0
+            counter = 0
+
+        # Read next image
+        t_minus = t
+        t = t_plus
+        t_plus = cv2.cvtColor(image_queue.get(), cv2.COLOR_RGB2GRAY)
 
 def test_unit():
-    image = cv2.imread("images/aseal.jpg")
-    cv2.imshow("Test", image)
-    #bgr = show_histogram(image)
-    hist = cv2.calcHist(image, [0], None, [bin_size], [0,255])
-    d_hist = np.empty_like(hist)
-    d_hist[:] = hist * 2
+    global timed_average
+    test_queue = Queue(50)
+    cap = cv2.VideoCapture(0)
 
-    print("\n-------------------- Histogram Values ---------------------\n")
-    print(hist)
-    print("\n-------------------- Doubled Histogram Values ---------------------\n")
-    print(d_hist)
+    while True:
+        for x in xrange(50):
+            success, img = cap.read()
+            if success:
+                test_queue.put(img)
 
-    cv2.waitKey(10000)
-
+        image = test_queue.get()
+        cv2.imshow("Test", image)
+        print("Direction detected = ")
+        print(direction_detected(test_queue))
+        cv2.waitKey(10)
 
 if __name__ == "__main__":
     test_unit()

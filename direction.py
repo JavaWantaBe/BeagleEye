@@ -5,7 +5,8 @@ __author__ = 'trey'
 import logging
 import cv2
 import numpy as np
-from Queue import Queue
+from capmanager import CaptureManager
+
 
 # Initialize video capture and logger
 directlog = logging.getLogger('direction')
@@ -93,14 +94,15 @@ def direction_detected(image_queue):
     while True:
         diff = diffImg(t_minus, t, t_plus)
         cv2.normalize(diff, diff, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
-        count = (diff > 200).sum()
-        if count > max_count:
+        cv2.imshow("Differential Image", diff)
+        positive_count = (diff > 200).sum()
+        if positive_count > max_count:
             counter += 1
             if counter == 5:
                 counter = 0
                 directlog.debug("Motion Detected")
                 return True
-            max_count = count
+            max_count = positive_count
         else:
             max_count = 0
             counter = 0
@@ -112,20 +114,12 @@ def direction_detected(image_queue):
 
 def test_unit():
     global timed_average
-    test_queue = Queue(50)
-    cap = cv2.VideoCapture(0)
-
-    while True:
-        for x in xrange(50):
-            success, img = cap.read()
-            if success:
-                test_queue.put(img)
-
-        image = test_queue.get()
-        cv2.imshow("Test", image)
-        print("Direction detected = ")
-        print(direction_detected(test_queue))
-        cv2.waitKey(10)
+    capture = CaptureManager(0, 100)
+    capture.start()
+    my_queue = capture.get_queue
+    print("Direction detected = ")
+    print(direction_detected(my_queue))
+    cv2.waitKey(10)
 
 if __name__ == "__main__":
     test_unit()

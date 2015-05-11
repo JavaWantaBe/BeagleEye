@@ -31,8 +31,8 @@ class CaptureManager(Thread):
         # Private Variables
         self._device = cv2.VideoCapture(device)
         self._queue = Queue.Queue(queue_size)
-        self._width = self._device.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
-        self._height = self._device.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
+        #self._width = self._device.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
+        #self._height = self._device.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
         self._fps = 0
         self._desired_fps = fps
         self._state = Condition()

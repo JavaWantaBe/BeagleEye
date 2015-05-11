@@ -98,7 +98,7 @@ def direction_detected(image_queue):
         positive_count = (diff > 200).sum()
         if positive_count > max_count:
             counter += 1
-            if counter == 5:
+            if counter == 4:
                 counter = 0
                 directlog.debug("Motion Detected")
                 return True

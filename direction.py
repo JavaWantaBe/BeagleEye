@@ -94,14 +94,15 @@ def direction_detected(image_queue):
     while True:
         diff = diffImg(t_minus, t, t_plus)
         cv2.normalize(diff, diff, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+        cv2.namedWindow("Differential Image", cv2.WINDOW_FREERATIO)
         cv2.imshow("Differential Image", diff)
-        positive_count = (diff > 200).sum()
+        positive_count = (diff > 180).sum()
         if positive_count > max_count:
             counter += 1
             if counter == 4:
                 counter = 0
                 directlog.debug("Motion Detected")
-                return True
+                return diff, 1
             max_count = positive_count
         else:
             max_count = 0

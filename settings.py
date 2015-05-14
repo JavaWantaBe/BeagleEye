@@ -15,29 +15,29 @@ xml_file = path.join('settings', 'settings.xml')
 #   @param level - starting level of tree
 #
 def indent(elem, level=0):
-    i = "\n" + level*"  "
+    i = "\n" + level * "  "
     if len(elem):
         if not elem.text or not elem.text.strip():
             elem.text = i + "  "
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
         for elem in elem:
-            indent(elem, level+1)
+            indent(elem, level + 1)
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
     else:
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
+
 ##
 #   Builds a new XML settings document is one does not exist with
 #   with default settings for the unit
 #
 def _build_default_tree():
-
     beagle = Et.Element('beagleeye')
 
-    # Network Settings - Holds local unit netowork settings
+    # Network Settings - Holds local unit network settings
     net_setting = Et.SubElement(beagle, 'setting')
     net_setting.set("name", "network")
 
@@ -110,6 +110,7 @@ def _build_default_tree():
     new_tree = Et.ElementTree(beagle)
     new_tree.write(xml_file, xml_declaration=True, encoding='utf-8', method="xml")
 
+
 ##
 #   @brief Manages all settings for the system
 #
@@ -118,14 +119,11 @@ def _build_default_tree():
 class SettingManager(object):
 
     def __init__(self):
-
         if not path.exists('settings'):
             try:
                 makedirs('settings')
-            except OSError as exception:
-                if exception.errno != exception.errno.EEXIST:
-                    setting_log.error("Unable to create director")
-                    raise
+            except OSError:
+                    setting_log.error("Unable to create directory")
 
         if not path.exists(xml_file):
             _build_default_tree()

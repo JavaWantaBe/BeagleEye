@@ -1,16 +1,17 @@
 # BeagleEye
-Couple Linux with OpenCV, then throw in an affordable embedded system and what do you have?  BeagleEye, a fully autonomous computer vision system that detects license plates on automobiles.
+Couple Linux with OpenCV, then throw in an affordable embedded system and what do you have?  BeagleEye, a fully 
+autonomous computer vision system that detects license plates on automobiles.
 
 ## Dependencies
 
 ### Python Dependencies
 ```sh
-$ sudo apt-get install python-numpy python-scipy python-opencv
+$ sudo apt-get install python-numpy python-scipy python-opencv python-mysqldb
 ```
 
 ### MySql Dependencies
 ```sh
-$ sudo apt-get install mysql-server mysql-client
+$ sudo apt-get install mysql-client
 ```
 
 ### OpenCV

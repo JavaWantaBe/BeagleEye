@@ -1,36 +1,51 @@
 __author__ = 'trey'
 
-import logging
 import cv2
-from threading import Thread
-from Queue import Queue
+import multiprocessing
 import Tkinter
 import direction
-
-# Initialize logger for presentation
-presentlog = logging.getLogger('presentation')
-
-# Initialize capture manager, must start later though
+import time
 
 
-def original(source, width, height, x, y):
-    cap = cv2.VideoCapture(source)
+def original(width, height, x, y):
+    cap = cv2.VideoCapture("movie.MOV")
+    time.sleep(1.6)
     while True:
         success, img = cap.read()
-        while success:
+        if success:
             cv2.namedWindow("Original", cv2.WINDOW_FREERATIO)
-            cv2.resizeWindow("Original", width, (height)-55)  # top
+            cv2.resizeWindow("Original", width, height)  # top
             cv2.imshow("Original", img)
             cv2.moveWindow("Original", x, y)
             cv2.waitKey(10)
+        else:
+            cap.release()
+            break
 
+def detection(width, height, x, y):
+    loop = True
+    cap = cv2.VideoCapture("movie.MOV")
+    cue = multiprocessing.Queue()
 
-def detection(source, width, height, x, y):
-    capture = cv2.VideoCapture(source)
-    while True:
-        success, img = capture.read()
+    num_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    num_frames = int(num_frames)
+    print("Number of frames = " + str(num_frames))
 
+    while num_frames:
+        success, img = cap.read()
+        if success:
+            cue.put(img)
+        num_frames -= 1
 
+    while loop:
+        image, detected = direction.direction_detected(cue)
+        if detected:
+            cv2.putText(image, 'Motion Detected!!', (10, 400), cv2.FONT_HERSHEY_SIMPLEX, 2, (255,255,255),2,cv2.LINE_AA)
+            cv2.imshow("Differential Image", image)
+            cv2.waitKey(2300)
+            detected = 0
+            loop = False
+            cap.release()
 
 def show_project():
 
@@ -39,15 +54,11 @@ def show_project():
     screen_height = root.winfo_screenheight()
     print "Width  = " + str(screen_width)
     print "Height = " + str(screen_height)
-    original(0, screen_width/2, (screen_height/2)-55, 0, 0)
-'''
-        if detected:
-            cv2.putText(image, 'Motion Detected!!', (10, 400), cv2.FONT_HERSHEY_SIMPLEX, 2, (255,255,255),2,cv2.LINE_AA)
-            cv2.resizeWindow("Differential Image", screen_width/2, (screen_height/2)-30)  # bottom
-            cv2.imshow("Differential Image", image)
-            cv2.moveWindow("Differential Image", screen_width/2, screen_height/2)
-            cv2.waitKey(1000)
-            detected = 0
-'''
+
+    orig_thread = multiprocessing.Process(target=original, args=(screen_width/2, (screen_height/2)-55, 0, 0))
+    detect_thread = multiprocessing.Process(target=detection, args=(screen_width/2, (screen_height/2)-55, screen_width/2, 0))
+    orig_thread.start()
+    detect_thread.start()
+
 if __name__ == "__main__":
     show_project()

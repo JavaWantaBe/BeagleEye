@@ -6,10 +6,11 @@ import Tkinter
 import direction
 import time
 
+movie = "movie.mp4"
 
 def original(width, height, x, y):
-    cap = cv2.VideoCapture("movie.MOV")
-    time.sleep(1.6)
+    cap = cv2.VideoCapture(movie)
+    time.sleep(2.3)
     while True:
         success, img = cap.read()
         if success:
@@ -24,7 +25,7 @@ def original(width, height, x, y):
 
 def detection(width, height, x, y):
     loop = True
-    cap = cv2.VideoCapture("movie.MOV")
+    cap = cv2.VideoCapture(movie)
     cue = multiprocessing.Queue()
 
     num_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -38,6 +39,7 @@ def detection(width, height, x, y):
         num_frames -= 1
 
     while loop:
+        #new_queue = cue
         image, detected = direction.direction_detected(cue)
         if detected:
             cv2.putText(image, 'Motion Detected!!', (10, 400), cv2.FONT_HERSHEY_SIMPLEX, 2, (255,255,255),2,cv2.LINE_AA)
@@ -46,6 +48,9 @@ def detection(width, height, x, y):
             detected = 0
             loop = False
             cap.release()
+            cv2.destroyWindow("Differential Image")
+
+
 
 def show_project():
 

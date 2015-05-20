@@ -1,6 +1,16 @@
 import numpy as np
 import cv2
 import Queue
+import tesseract
+import cv2.cv as cv
+
+api = tesseract.TessBaseAPI()
+api.Init(".","eng",tesseract.OEM_DEFAULT)
+api.SetPageSegMode(tesseract.PSM_SINGLE_CHAR)
+
+font = cv2.FONT_HERSHEY_SIMPLEX
+
+
 """
 	This module is activated when motion on a large enough scale is detected and is determined to be
 	moving toward the camera. This module uses two trained classifiers, one for detecting cars and
@@ -20,7 +30,7 @@ except:
 	print "Error with cascade.xml"		#error handler if cascade.xml is not found
 
 #cv2.VideoCapture allows you to import videos to run through your CascadeClassifier
-cap = cv2.VideoCapture('IMG_0851C.mp4')
+cap = cv2.VideoCapture('movie.mp4')
 
 #creates a queue to store all of the detected objects
 crop_q = Queue.Queue()
@@ -45,11 +55,11 @@ img_avgH = 0
 	way only the initial parameters will need to be tuned and they will scale with 
 	the image.
 """
-minSizeH_car = int( 50 * (width/640) )
-minSizeW_car = int( 50 * ( height / 480 ) )
+minSizeH_car = int( 100 * (width/640) )
+minSizeW_car = int( 100 * ( height / 480 ) )
  
-maxSizeH_car = int( 1000 * ( width / 640 ) )
-maxSizeW_car = int( 1000 * ( height / 480 ) )
+maxSizeH_car = int( 10000 * ( width / 640 ) )
+maxSizeW_car = int( 10000 * ( height / 480 ) )
 
 #this print statements will display the rectangle size in the command prompt
 print "Width is: " + str( width ) + "   Height is: " + str( height )
@@ -67,7 +77,7 @@ while True:
 		break
 
 	#not a necessary bit of code, img.shape allows you to rotate your videos if needed
-	rows,cols,useless = img.shape
+	#rows,cols,useless = img.shape
 
 	if not ret:
 		continue
@@ -93,14 +103,13 @@ while True:
 	gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 	gray = cv2.medianBlur(gray,1)
-	gray = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,35,19)
 	#gray = cv2.GaussianBlur(gray,(5,5),0)
 	#ret1, gray = cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
 
 	#these two function perform the actual rotation of your image using the img.shape function
 	#the -90 is the actual rotation in degrees, + is counter clockwise and - is clockwise
-	rot = cv2.getRotationMatrix2D((cols/2,rows/2),-90,1)
-	gray = cv2.warpAffine(gray,rot,(cols,rows))
+	#rot = cv2.getRotationMatrix2D((cols/2,rows/2),-90,1)
+	#gray = cv2.warpAffine(gray,rot,(cols,rows))
 
 	gray = (255-gray)
 
@@ -122,8 +131,8 @@ while True:
 	"""
 	car_detect = car.detectMultiScale(
 		gray, 
-		scaleFactor=1.3,
-		minNeighbors=20,
+		scaleFactor=1.2,
+		minNeighbors=30,
 		minSize=(minSizeH_car, minSizeW_car),
 		maxSize=(maxSizeH_car, maxSizeW_car),
 		flags=cv2.cv.CV_HAAR_SCALE_IMAGE)
@@ -166,10 +175,14 @@ while True:
 							fast and to frequent to be able to see the images, so it is really only there as
 							a visual acknowledgement that the cropping is actually happening.
 	"""
-	cv2.imshow('Plate Detection', gray)
-	cv2.imshow('cropped image', cropped_img)
+	cv2.namedWindow('Car Detection', cv2.WINDOW_NORMAL)
+	cv2.resizeWindow('Car Detection',(int(width/2)), (int(height/2)))
+	cv2.imshow('Car Detection', gray)
+	cv2.moveWindow('Car Detection',0, (int(height/2)))
 
-	cv2.waitKey(10)
+	#cv2.imshow('Plate Detection', gray)
+
+	cv2.waitKey(20)
 
 print "Vehicles Detected: " + str(numRect)
 print "Images in Queue:   " + str(crop_q.qsize())
@@ -198,10 +211,10 @@ while not crop_q.empty():
 
 	plates = plate_cascade.detectMultiScale(
 		crop_img,
-		scaleFactor=1.1,
+		scaleFactor=1.3,
 		minNeighbors=20,
-		#minSize=(),
-		#maxSize=(),
+		minSize=(150,150),
+		#maxsize=(150, 150),
 		flags=cv2.cv.CV_HAAR_SCALE_IMAGE)
 
 	for (x,y,w,h) in plates:
@@ -210,7 +223,10 @@ while not crop_q.empty():
 		numRect = numRect + 1
 		lpr_q.put(stage2_img)
 
+	cv2.namedWindow('second detection', cv2.WINDOW_NORMAL)
+	cv2.resizeWindow('second detection',(int(width/2)),(int(height/2)))
 	cv2.imshow('second detection', stage2_img)
+	cv2.moveWindow('second detection',0, (int(height/2)))
 	cv2.waitKey(50)
 
 #print "minSizeH_veh:" + str(minSizeH_veh) + "     minSizeW_veh: " + str(minSizeW_veh)
@@ -223,6 +239,47 @@ cv2.destroyAllWindows()
 
 while not lpr_q.empty():
 	ocr_image = lpr_q.get()
-	cv2.imshow('OCR IMAGES FUUUUUUCK', ocr_image)
+	cv2.namedWindow('OCR Images', cv2.WINDOW_NORMAL)
+	cv2.resizeWindow('OCR Images',(int(width/2)),(int(height/2)))
+	cv2.imshow('OCR Images', ocr_image)
+	cv2.moveWindow('OCR Images',0, (int(height/2)))
 
-	cv2.waitKey(300)
+	cv2.waitKey(50)
+	crop_q.put(ocr_image)
+
+
+while not crop_q.empty():
+	gray = crop_q.get()
+	gray = (255-gray)
+	gray = cv2.resize(gray, None, fx=2, fy=2, interpolation = cv2.INTER_CUBIC)
+
+	out = np.zeros((80, 320, 3),np.uint8)
+
+	thresh = cv2.adaptiveThreshold(gray,255,1,1,11,2)
+
+	height1, width1 = gray.shape[:2]
+	iplimage = cv.CreateImageHeader((width1,height1), cv.IPL_DEPTH_8U,1)
+	cv.SetData(iplimage, gray.tostring(),gray.dtype.itemsize * (width1))
+	tesseract.SetCvImage(iplimage,api)
+	text = api.GetUTF8Text()
+	conf = api.MeanTextConf()
+
+	cv2.putText(out, text, (10,70), font,.5,(255,255,255))
+
+	cv2.namedWindow('OCR Images', cv2.WINDOW_NORMAL)
+	cv2.resizeWindow('OCR Images',(int(width/2)),(int(height/2)))
+	cv2.imshow('OCR Images', ocr_image)
+	cv2.moveWindow('OCR Images',0, (int(height/2)))
+
+	cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
+	cv2.resizeWindow('frame',(int(width/2)),(int(height/2)))
+	cv2.moveWindow('frame',960, (int(height/2)))
+	cv2.imshow('frame',gray)
+	cv2.imshow('read',out)
+	if cv2.waitKey(100) & 0xFF == ord('q'):
+		break
+
+api.End()
+cap.release()
+cv2.destroyAllWindows()
+
